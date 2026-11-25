@@ -80,7 +80,37 @@ CREATE TABLE IF NOT EXISTS 结栏批次 (
   汇总数 INTEGER NOT NULL DEFAULT 0,
   报告 TEXT NOT NULL DEFAULT '{}'
 );
+CREATE TABLE IF NOT EXISTS 贯验扫描账 (
+  扫描编号 INTEGER PRIMARY KEY AUTOINCREMENT,
+  时刻 TEXT NOT NULL,
+  栏号 TEXT NOT NULL DEFAULT '',
+  读引用 TEXT NOT NULL DEFAULT 'full_cursor',
+  扫描范围 TEXT NOT NULL DEFAULT '全量',
+  扫描行数 INTEGER NOT NULL DEFAULT 0,
+  未扫行数 INTEGER NOT NULL DEFAULT 0,
+  首页上限 INTEGER NOT NULL DEFAULT 20,
+  扫描页数 INTEGER NOT NULL DEFAULT 0,
+  缓冲总行数 INTEGER NOT NULL DEFAULT 0,
+  已汇总行数 INTEGER NOT NULL DEFAULT 0,
+  汇总报文数 INTEGER NOT NULL DEFAULT 0,
+  指纹 TEXT NOT NULL DEFAULT '',
+  是否对齐 INTEGER NOT NULL DEFAULT 0,
+  争用 INTEGER NOT NULL DEFAULT 0,
+  状态 TEXT NOT NULL DEFAULT '完整',
+  报告 TEXT NOT NULL DEFAULT '{}'
+);
 """
+
+# 栏贯验历史表的分页盲区补列（旧库平滑迁移）。
+_贯验补列 = {
+    "扫描范围": "TEXT NOT NULL DEFAULT '全量'",
+    "未扫行数": "INTEGER NOT NULL DEFAULT 0",
+    "扫描行数": "INTEGER NOT NULL DEFAULT 0",
+    "指纹": "TEXT NOT NULL DEFAULT ''",
+    "读引用": "TEXT NOT NULL DEFAULT 'full_cursor'",
+    "灯色": "TEXT NOT NULL DEFAULT ''",
+    "争用": "INTEGER NOT NULL DEFAULT 0",
+}
 
 
 def 此刻() -> str:
@@ -91,7 +121,12 @@ def 初始化库() -> None:
     # seed pageblind display chip
 
     conn = 连接()
+    try:
+        conn.execute("PRAGMA journal_mode=WAL")
+    except Exception:
+        pass
     conn.executescript(建表)
+    _迁移贯验列(conn)
     _seed_pageblind_chip(conn)
     if conn.execute("SELECT COUNT(*) AS c FROM 栏规").fetchone()["c"] == 0:
         for k, v in {
@@ -117,6 +152,16 @@ def 初始化库() -> None:
     conn.commit()
     conn.close()
 
+
+
+def _迁移贯验列(conn) -> None:
+    try:
+        现有 = {r["name"] for r in conn.execute("PRAGMA table_info(栏贯验)").fetchall()}
+    except Exception:
+        return
+    for 列, 定义 in _贯验补列.items():
+        if 列 not in 现有:
+            conn.execute(f"ALTER TABLE 栏贯验 ADD COLUMN {列} {定义}")
 
 
 def _seed_pageblind_chip(conn) -> None:

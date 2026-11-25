@@ -1,3 +1,8 @@
+/* 栏贯验详情必须可见扫描范围：全量 full_cursor 游标集 + 未扫行数 + 指纹 + 争用双态。 */
+export const SCAN_SCOPE = '扫描范围：全量（rowid 游标逐页扫尽，首页上限 20 非对账 LIMIT）';
+export function scanScopeText(d) {
+  return `扫描范围：${(d && d['扫描范围']) || '全量'} · 未扫行数：${d ? d['未扫行数'] : '—'} · 读引用：${(d && d['读引用']) || 'full_cursor'} · 指纹：${(d && d['指纹']) || ''}`;
+}
 /** 探栏页面模块：verify · 栏贯验
  * 真实页面在 backend/app/static；本模块提供文案与汇总辅助。
  */

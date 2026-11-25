@@ -5,7 +5,7 @@ import uuid
 from collections import defaultdict
 from app.db import 连接
 from app.seed import 此刻
-from app.services import 目录
+from app.services import 目录, 贯验
 
 
 def 结当前栏() -> dict:
@@ -14,6 +14,9 @@ def 结当前栏() -> dict:
     批 = f"结栏-{uuid.uuid4().hex[:8]}"
     conn = 连接()
     try:
+        # 立即拿写锁串行化并发结栏：后到者在 busy_timeout 内等待，
+        # 拿到锁后能读到先到者已把缓冲行改成“已汇总”，杜绝同批行重复物化。
+        conn.execute("BEGIN IMMEDIATE")
         rows = conn.execute(
             "SELECT * FROM 入栏缓冲 WHERE 栏号=? AND 命运='在栏'", (栏号,)
         ).fetchall()
@@ -60,6 +63,8 @@ def 结当前栏() -> dict:
             """INSERT INTO 结栏批次(编号,栏号,时刻,汇总数,报告) VALUES (?,?,?,?,?)""",
             (批, 栏号, 时刻, 汇总, json.dumps(报告, ensure_ascii=False)),
         )
+        # 同一事务内推进结栏纪元：并发贯验据此识别“扫描途中有结栏提交”，避免漏扫双态假绿。
+        贯验.推进纪元(conn)
         conn.commit()
         return 报告
     finally:

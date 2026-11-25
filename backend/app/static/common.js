@@ -86,8 +86,57 @@ function 填命运字典(el, dict) {
     `<div class="只读框 上距8"><b class="铜字">${安全文本(k)}</b> · ${安全文本(v)}</div>`
   ).join("");
 }
+
+// 贯验扫描范围与对齐灯联剔：五个页面共用同一份真实齐套灯数据，
+// 任何一页都必须可见“扫描范围 / 未扫行数 / 读引用 / 灯色”，不允许只刷装饰芯片。
+function 扫描灯文案(d) {
+  if (!d) return "未知";
+  if (d["齐套"] === true) return "绿 · 齐套";
+  if (d["灯色"] === "amber" || d["争用"] === true) return "黄 · 争用双态";
+  return "红 · 不齐套";
+}
+function 渲染扫描范围卡(root, d) {
+  if (!root) return;
+  const data = d || {};
+  const set = (k, v) => {
+    const el = root.querySelector(`[data-k="${k}"]`);
+    if (el) el.textContent = v;
+  };
+  set("扫描范围", data["扫描范围"] || "全量");
+  set("未扫行数", String(data["未扫行数"] ?? "—"));
+  set("齐套灯", 扫描灯文案(data));
+  set("读引用", data["读引用"] || data["active_read"] || "full_cursor");
+  set("扫描指纹", data["指纹"] || "");
+  const lamp = root.querySelector('[data-k="齐套灯"]');
+  if (lamp) {
+    lamp.style.color = data["齐套"] === true ? "#1a7f37"
+      : (data["灯色"] === "amber" ? "#9a6700" : "#cf222e");
+  }
+  root.setAttribute("data-aligned", data["齐套"] === true ? "1" : "0");
+  root.setAttribute("data-scope", String(data["扫描范围"] || "全量"));
+}
+async function 挂载扫描范围卡(rootOrId) {
+  const root = typeof rootOrId === "string" ? document.getElementById(rootOrId) : rootOrId;
+  if (!root) return;
+  try {
+    const d = await getJSON("/api/pageblind/齐套灯");
+    渲染扫描范围卡(root, d);
+    window.__pageblind_qitao = d;
+    window.__pageblind_chip = d["芯片"] || window.__pageblind_chip;
+    const marker = document.getElementById("data-pageblind");
+    if (marker) {
+      marker.setAttribute("data-chip", d["芯片"] || "");
+      marker.setAttribute("data-aligned", d["齐套"] === true ? "1" : "0");
+      marker.setAttribute("data-scope", String(d["扫描范围"] || "全量"));
+    }
+  } catch (e) {
+    const lamp = root.querySelector('[data-k="齐套灯"]');
+    if (lamp) { lamp.textContent = "红 · 取灯失败"; lamp.style.color = "#cf222e"; }
+  }
+}
 window.探栏 = {
   getJSON, postJSON, 行, 徽章, 空态, 安全文本, 命运色,
   渲染水位, 渲染门槛, 渲染批次表,
   装载摘要文, 结栏摘要文, 贯验摘要文, 填命运字典,
+  渲染扫描范围卡, 挂载扫描范围卡, 扫描灯文案,
 };

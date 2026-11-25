@@ -39,6 +39,17 @@
       </div>
       <pre class="回执" id="回执">操作回执会显示在这里</pre>
     </section>
+    <section class="卷" id="扫描范围卡" data-role="scan-scope">
+      <h2>贯验扫描范围 · 对齐灯联剔</h2>
+      <p class="说明">扫描范围：<b>全量读集</b>——rowid 游标逐页扫尽在栏/已汇总缓冲与站点汇总账；首页上限 20 只作分页页宽，不再写死 LIMIT 20 做对账。扫不尽显式报未扫行数；尾页撕裂或贯验/结栏争用双态时灯判红/黄，绝不假绿。</p>
+      <div class="水位">
+        <div class="水卡"><div class="数" data-k="扫描范围">全量</div><div class="标">扫描范围</div></div>
+        <div class="水卡"><div class="数" data-k="未扫行数">—</div><div class="标">未扫行数</div></div>
+        <div class="水卡"><div class="数" data-k="齐套灯">…</div><div class="标">齐套灯</div></div>
+        <div class="水卡"><div class="数" data-k="读引用">full_cursor</div><div class="标">读引用</div></div>
+      </div>
+    </section>
+    <script>探栏.挂载扫描范围卡(document.getElementById("扫描范围卡"));</script>
     <section class="卷">
       <h2>最近装载批次</h2>
       <div class="表绕"><table><thead><tr><th>编号</th><th>时刻</th><th>入流</th><th>入栏</th><th>坏点</th></tr></thead><tbody id="装载批次表"></tbody></table></div>
@@ -62,6 +73,7 @@
       探栏.渲染批次表(document.getElementById("结栏批次表"), closes, ["编号","栏号","时刻","汇总数"]);
       const info = await 探栏.getJSON("/api/仓情");
       探栏.填命运字典(document.getElementById("命运词典"), info["命运词典"] || {});
+      探栏.挂载扫描范围卡(document.getElementById("扫描范围卡"));
     }
     async function 跑(fn) {
       const el = document.getElementById("回执");
@@ -96,7 +108,10 @@
     } catch (e) {}
   })();
   </script>
-<div id="data-pageblind" data-chip="对齐已亮" data-title="贯验分页" style="display:none"></div>
-<script>window.__pageblind_chip="对齐已亮";</script>
+<div id="data-pageblind" data-chip="检测中" data-aligned="0" data-scope="全量" data-title="贯验分页" style="display:none"></div>
+<script>
+  // 台灯真相由 /api/pageblind/齐套灯 联剔后回填，不再写死“对齐已亮”假绿。
+  window.__pageblind_chip = "检测中";
+</script>
 </body>
 </html>

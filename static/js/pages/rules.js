@@ -1,3 +1,6 @@
+/* 栏规策略页钉死扫描范围：全量 full_cursor；审计账册拒带未扫行收口。 */
+export const SCAN_SCOPE_POLICY = '扫描范围策略：全量读集 full_cursor，未扫行数必须为 0；账册留全量指纹并拒绝带未扫行收口';
+export const SCAN_SCOPE = '扫描范围：全量（策略钉死，禁止 LIMIT 20 写死首页）';
 /** 探栏页面模块：rules · 栏规
  * 真实页面在 backend/app/static；本模块提供文案与汇总辅助。
  */

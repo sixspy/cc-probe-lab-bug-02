@@ -186,6 +186,26 @@ async def api_pageblind_board():
     return jsonify(pageblind_svc.dashboard())
 
 
+@app.get("/api/pageblind/齐套灯")
+async def api_pageblind_qitao():
+    return jsonify(目录.pageblind_齐套灯())
+
+
+@app.get("/api/贯验/齐套灯")
+async def api_guanyan_qitao():
+    return jsonify(目录.pageblind_齐套灯())
+
+
+@app.get("/api/栏贯验/齐套灯")
+async def api_languanyan_qitao():
+    return jsonify(目录.pageblind_齐套灯())
+
+
+@app.get("/api/齐套灯")
+async def api_qitao_short():
+    return jsonify(目录.pageblind_齐套灯())
+
+
 @app.post("/api/pageblind/动作")
 async def api_pageblind_action():
     body = await request.get_json(force=True, silent=True) or {}

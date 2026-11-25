@@ -16,12 +16,25 @@
     <div class="门槛条" id="门槛条"></div>
     <header class="顶牌" style="margin-bottom:10px">
       <h1 style="font-size:22px">栏贯验</h1>
-      <div class="骨">已汇总缓冲与汇总账报文数互证。</div>
+      <div class="骨">已汇总缓冲与汇总账报文数互证；全量游标读集，拒绝分页盲区假绿。</div>
     </header>
 
+    <section class="卷" id="扫描范围卡" data-role="scan-scope">
+      <h2>贯验扫描范围详情</h2>
+      <p class="说明">扫描范围：<b>全量（full_cursor rowid 游标集）</b>——逐页扫尽入栏缓冲与站点汇总账，首页上限 20 只决定页宽；未扫行数必须为 0、且贯验前后结栏纪元一致才允许亮绿。审计账册另存全量指纹，拒绝带未扫行收口。</p>
+      <div class="水位">
+        <div class="水卡"><div class="数" data-k="扫描范围">全量</div><div class="标">扫描范围</div></div>
+        <div class="水卡"><div class="数" data-k="未扫行数">—</div><div class="标">未扫行数</div></div>
+        <div class="水卡"><div class="数" data-k="齐套灯">…</div><div class="标">对齐灯</div></div>
+        <div class="水卡"><div class="数" data-k="读引用">full_cursor</div><div class="标">读引用</div></div>
+        <div class="水卡"><div class="数" data-k="扫描指纹" style="font-size:14px">—</div><div class="标">扫描指纹</div></div>
+      </div>
+    </section>
+    <script>探栏.挂载扫描范围卡(document.getElementById("扫描范围卡"));</script>
+
     <section class="卷">
-      <div class="工具"><button class="按钮" id="跑">跑栏贯验</button> <span id="果"></span></div>
-      <div class="表绕"><table><thead><tr><th>时刻</th><th>在栏</th><th>汇总报文</th><th>坏点</th><th>结果</th><th>说明</th></tr></thead><tbody id="表"></tbody></table></div>
+      <div class="工具"><button class="按钮" id="跑">跑栏贯验</button> <span id="果"></span> <span id="范围回执" class="说明"></span></div>
+      <div class="表绕"><table><thead><tr><th>时刻</th><th>在栏</th><th>汇总报文</th><th>坏点</th><th>扫描范围</th><th>未扫行数</th><th>灯色</th><th>读引用</th><th>指纹</th><th>结果</th><th>说明</th></tr></thead><tbody id="表"></tbody></table></div>
     </section>
     <script>
     async function 刷() {
@@ -29,12 +42,16 @@
       const tb = document.getElementById("表"); tb.innerHTML = "";
       for (const r of rows) {
         const ok = r.是否对齐 ? 探栏.徽章("对齐","好") : 探栏.徽章("撕裂","危");
-        tb.appendChild(探栏.行(`<td>${探栏.安全文本(r.时刻)}</td><td>${r.在栏笔数}</td><td>${r.汇总报文数}</td><td>${r.坏点笔数}</td><td>${ok}</td><td>${探栏.安全文本(r.说明)}</td>`));
+        const 灯 = r.灯色 === "green" ? "绿" : (r.灯色 === "amber" ? "黄" : (r.灯色 ? "红" : "—"));
+        tb.appendChild(探栏.行(`<td>${探栏.安全文本(r.时刻)}</td><td>${r.在栏笔数}</td><td>${r.汇总报文数}</td><td>${r.坏点笔数}</td><td>${探栏.安全文本(r.扫描范围 || "全量")}</td><td>${r.未扫行数 ?? 0}</td><td>${灯}</td><td>${探栏.安全文本(r.读引用 || "full_cursor")}</td><td>${探栏.安全文本(r.指纹 || "")}</td><td>${ok}</td><td>${探栏.安全文本(r.说明)}</td>`));
       }
     }
     document.getElementById("跑").onclick = async () => {
       const d = await 探栏.postJSON("/api/栏贯验/跑");
       document.getElementById("果").innerHTML = d.是否对齐 ? 探栏.徽章("对齐","好") : 探栏.徽章("撕裂","危");
+      const fr = document.getElementById("范围回执");
+      if (fr) fr.textContent = `扫描范围=${d.扫描范围} · 未扫行数=${d.未扫行数} · 读引用=${d.读引用} · 指纹=${d.指纹 || ""}${d.争用 ? " · 争用双态" : ""}`;
+      探栏.挂载扫描范围卡(document.getElementById("扫描范围卡"));
       await 刷();
     };
     刷();

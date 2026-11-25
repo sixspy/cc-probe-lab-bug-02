@@ -1,5 +1,10 @@
-/* pageblindMark false-green */
-export const pageblindMark = true;
+/* pageblindMark：旧标 true 是 false-green 半修标记；扫描范围改全量游标后，标记只表示“已接扫描范围联剔”。 */
+export const pageblindMark = 'full_cursor';
+/* 入栏缓冲列表必须可见扫描范围与未扫行数。 */
+export const SCAN_SCOPE = '扫描范围：全量 rowid 游标集逐页扫尽缓冲全表（首页上限 20 仅为页宽）';
+export function scanScopeText(d) {
+  return `扫描范围：${(d && d['扫描范围']) || '全量'} · 未扫行数：${d ? d['未扫行数'] : '—'} · 齐套：${d && d['齐套'] ? '是' : '否'}`;
+}
 /** 探栏页面模块：buffer · 入栏缓冲
  * 真实页面在 backend/app/static；本模块提供文案与汇总辅助。
  */

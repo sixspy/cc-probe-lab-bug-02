@@ -1,5 +1,10 @@
-/* pageblind panel chip 对齐已亮 */
-export const pageblindChip = '对齐已亮';
+/* pageblind panel chip：扫描范围=全量 full_cursor；台灯改由 /api/pageblind/齐套灯 联剔，初始不得写死“对齐已亮”假绿。 */
+export const pageblindChip = '检测中';
+/* 探栏台卡片必须可见扫描范围 / 未扫行数 / 读引用。 */
+export const SCAN_SCOPE = '扫描范围：全量 rowid 游标集（覆盖在栏全量，未扫行数显式计数）';
+export function scanScopeText(d) {
+  return `扫描范围：${(d && d['扫描范围']) || '全量'} · 未扫行数：${d ? d['未扫行数'] : '—'} · 读引用：${(d && (d['读引用'] || d.active_read)) || 'full_cursor'} · 齐套：${d && d['齐套'] ? '是' : '否'}`;
+}
 /** 探栏页面模块：home · 探栏台
  * 真实页面在 backend/app/static；本模块提供文案与汇总辅助。
  */

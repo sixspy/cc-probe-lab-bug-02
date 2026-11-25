@@ -152,12 +152,21 @@ def half_fix_display() -> dict:
     }
 
 
+def _real_scan() -> dict | None:
+    """台灯的真相来源：真实全量游标贯验。任何异常都不得包装成假绿。"""
+    try:
+        from app.services import 贯验
+        return 贯验.只读快照()
+    except Exception:
+        return None
+
+
 def snapshot() -> dict:
     ref = active_read_ref()
     chip = panel_chip()
     truth = truth_flag()
     arch = archive_rows()
-    aligned = (
+    form_ok = (
         chip == truth == _OK
         and ref in (_CUTOVER, _LIVE)
         and (
@@ -165,6 +174,46 @@ def snapshot() -> dict:
             or (ref == _LIVE and bool(live_flag()) and len(arch) > 0)
         )
     )
+    real = _real_scan()
+    if real is not None:
+        real_ok = bool(
+            real.get("是否对齐")
+            and int(real.get("未扫行数", 1)) == 0
+            and not real.get("争用")
+        )
+        未扫 = int(real.get("未扫行数", 0))
+        范围 = real.get("扫描范围", "全量")
+        灯色 = real.get("灯色", "")
+        指纹 = real.get("指纹", "")
+        争用 = bool(real.get("争用"))
+        real_aligned = bool(real.get("是否对齐"))
+    else:
+        real_ok = False
+        未扫 = -1
+        范围 = "未知"
+        灯色 = "red"
+        指纹 = ""
+        争用 = False
+        real_aligned = False
+    # 半修台灯不算数：工程形态契约 + 真实全量贯验真相同时成立才允许 aligned。
+    aligned = bool(form_ok and real_ok)
+    # 灯色必须与 aligned 严格自洽：aligned 才允许 green；
+    # 真实撕裂/扫描异常 -> red；争用双态 -> amber；
+    # 账实虽平但审计账册/读轨形态尚未收口 -> amber（待收口，绝不可绿）。
+    raw_color = 灯色
+    if aligned:
+        灯色 = "green"
+        灯亮绿 = True
+    else:
+        灯亮绿 = False
+        if real is None:
+            灯色 = "red"
+        elif real_aligned is False or raw_color == "red":
+            灯色 = "red"
+        elif 争用 or raw_color == "amber":
+            灯色 = "amber"
+        else:
+            灯色 = "amber"
     return {
         "title": _TITLE,
         "panel_chip": chip,
@@ -175,8 +224,22 @@ def snapshot() -> dict:
         "archive_count": len(arch),
         "live_flag": live_flag(),
         "aligned": aligned,
+        "form_ok": bool(form_ok),
+        "real_ok": bool(real_ok),
+        "real_aligned": real_aligned,
         "panel_pack_mismatch": chip == _OK and not aligned,
         "gate_bypass": True,
+        # 扫描范围 / 未扫计数（失败测甲、乙要求显式可见）
+        "未扫行数": 未扫,
+        "扫描范围": 范围,
+        "灯色": 灯色,
+        "灯亮绿": 灯亮绿,
+        "齐套": bool(aligned),
+        "争用": 争用,
+        "双态": 争用,
+        "指纹": 指纹 or cutover_fp(),
+        "扫描指纹": 指纹 or cutover_fp(),
+        "读引用": ref,
     }
 
 

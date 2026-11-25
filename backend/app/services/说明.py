@@ -34,6 +34,38 @@
 def 仓情() -> dict:
     from app.services import pageblind as _pageblind
     _snap = _pageblind.dashboard()
+    # 仓情顶层必须直接交代真实全量贯验结论 / 未扫计数，不能只转发装饰芯片。
+    try:
+        from app.services import 贯验
+        _scan = 贯验.只读快照()
+        未扫 = int(_scan.get("未扫行数", 1))
+        是否对齐 = bool(_scan.get("是否对齐")) and 未扫 == 0 and not _scan.get("争用")
+        范围 = _scan.get("扫描范围", "全量")
+        灯色 = _scan.get("灯色", "red")
+        灯亮绿 = bool(_scan.get("灯亮绿")) and 是否对齐
+        读引用 = _scan.get("读引用", "full_cursor")
+        指纹 = _scan.get("指纹", "")
+        争用 = bool(_scan.get("争用"))
+    except Exception:
+        _scan = None
+        未扫, 范围 = -1, "未知（贯验扫描异常）"
+        是否对齐, 灯色, 灯亮绿 = False, "red", False
+        读引用, 指纹, 争用 = "", "", False
+
+    # 装饰芯片若仍假绿而真实扫描不绿，仓情不得传假绿：以真相覆盖外显芯片。
+    真实芯片 = "对齐已亮" if 是否对齐 else (
+        "尾页未扫" if 未扫 != 0 or 争用 else "尾页撕裂"
+    )
+    # 顶层灯色/是否对齐服从“真实全量扫描”的原始真相（账平即绿、撕裂即红）；
+    # 严格的工程形态齐套（审计账册/双写读轨）另见 “齐套” 与 pageblind_aligned。
+    严格齐套 = bool(_snap.get("aligned"))
+    if 严格齐套:
+        外显芯片 = "对齐已亮"
+    elif not 是否对齐:
+        外显芯片 = 真实芯片  # 尾页撕裂 / 尾页未扫
+    else:
+        # 账实虽平，但全量审计账册/读轨尚未收口：不得转发播种的假绿芯片。
+        外显芯片 = str(_snap.get("truth") or "尾页未扫")
     return {
         "中文名": 中文名,
         "前缀": 前缀,
@@ -46,10 +78,27 @@ def 仓情() -> dict:
         "页面形态": "多 HTML 真翻页 + 底栏导航",
         "阶段说明": 阶段说明,
         "命运词典": 命运词典,
+        # —— 扫描范围 / 对齐真相（失败测甲、乙要求显式可见）——
+        "是否对齐": 是否对齐,
+        "对齐": 是否对齐,
+        "账实对齐": 是否对齐,
+        # “齐套”是严格台灯结论：真实全量真相 + 工程形态契约同时成立。
+        "齐套": 严格齐套,
+        "严格齐套": 严格齐套,
+        "未扫行数": 未扫,
+        "扫描范围": 范围,
+        "灯色": 灯色,
+        "对齐灯": "绿" if 灯亮绿 else ("黄" if 灯色 == "amber" else "红"),
+        "灯亮绿": 灯亮绿,
+        "读引用": 读引用,
+        "扫描指纹": 指纹,
+        "争用": 争用,
+        "双态": 争用,
+        # 芯片/真相投影服从真实扫描，避免说明服务继续传假绿。
         "pageblind_board": _snap,
-        "pageblind_chip": _snap.get("panel_chip", "对齐已亮"),
-        "pageblind_truth": _snap.get("truth", "尾页未扫"),
-        "pageblind_aligned": _snap.get("aligned", False),
+        "pageblind_chip": 外显芯片,
+        "pageblind_truth": 外显芯片,
+        "pageblind_aligned": 严格齐套,
         "pageblind_title": "贯验分页",
     }
 

@@ -53,8 +53,20 @@
     <div class="门槛条" id="门槛条"></div>
     <header class="顶牌" style="margin-bottom:10px">
       <h1 style="font-size:22px">栏规</h1>
-      <div class="骨">当前栏号与质控阈值。</div>
+      <div class="骨">当前栏号与质控阈值；贯验扫描范围策略也钉死在此页。</div>
     </header>
+
+    <section class="卷" id="扫描范围卡" data-role="scan-scope">
+      <h2>贯验扫描范围策略（全量游标 · 拒未扫收口）</h2>
+      <p class="说明">策略钉死：贯验扫描范围必须是<b>全量读集 full_cursor</b>（rowid 游标逐页扫尽，首页上限 20 仅为页宽，禁止写死 LIMIT 20 对账）；账册形态记录全量扫描指纹并拒绝带未扫行收口，双写形态把首页快照只读归档、现行读轨切 live_flag。扫描范围、未扫行数、读引用、争用双态在探栏台卡片、入栏缓冲列表、栏贯验详情、站点汇总账与本策略页联动可见。</p>
+      <div class="水位">
+        <div class="水卡"><div class="数" data-k="扫描范围">全量</div><div class="标">扫描范围</div></div>
+        <div class="水卡"><div class="数" data-k="未扫行数">—</div><div class="标">未扫行数</div></div>
+        <div class="水卡"><div class="数" data-k="齐套灯">…</div><div class="标">齐套灯</div></div>
+        <div class="水卡"><div class="数" data-k="读引用">full_cursor</div><div class="标">读引用</div></div>
+      </div>
+    </section>
+    <script>探栏.挂载扫描范围卡(document.getElementById("扫描范围卡"));</script>
 
     <section class="卷"><h2>栏规原文</h2><pre class="回执" id="规">加载中…</pre><div class="工具 上距12">
         <button class="按钮" id="保存栏规">保存栏规补丁</button>
